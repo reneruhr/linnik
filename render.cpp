@@ -130,6 +130,7 @@ auto SquareBuffer() -> auto(decltype)
 	};	
 }
 
+
 auto DrawCircle(float radius, glm::vec3 center) ->decltype(auto)
 {
 
