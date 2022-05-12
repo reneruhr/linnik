@@ -52,7 +52,6 @@ auto SquareBuffer() -> decltype(auto)
 	};	
 }
 
-
 auto DrawTriangle() -> std::function<void(int, float)> 
 {
 	auto shader = Shader("shaders/circle.vert", "shaders/triangle.frag");
@@ -66,10 +65,5 @@ auto DrawTriangle() -> std::function<void(int, float)>
 		Draw();
 	};
 }
-
-
-
-
-
 
 }
