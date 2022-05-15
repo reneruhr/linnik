@@ -1,7 +1,10 @@
 #pragma once
+#include "math/random_word.h"
 #include <array>
 #include <cmath>
 #include <iostream>
+#include <functional>
+#include <numeric>
 
 namespace Math
 {
@@ -59,7 +62,13 @@ public:
 					);
 		return res; 
 	}
-	
+
+
+	constexpr friend auto Transpose(const GL2<Scalar>& g) -> GL2<Scalar>
+	{
+		return {g.data_[0], g.data_[2], g.data_[1], g.data_[3] };
+	}
+		
 	friend 	std::ostream& operator<<(std::ostream& os, const GL2<Scalar>& A)
 	{
 		os << A.At(0,0) << ", " << A.At(0,1) << "\n" 
@@ -72,6 +81,7 @@ public:
 	constexpr friend auto c(const GL2<Scalar>& g) -> const Scalar& { return g.data_[1]; }
 	constexpr friend auto d(const GL2<Scalar>& g) -> const Scalar& { return g.data_[3]; }
 };
+
 
 
 template <class Mat, int p>
@@ -169,14 +179,39 @@ constexpr auto ReductionTranslation(C z) -> C
 template<class C>
 constexpr auto Reduction(C z) -> C
 {
-	auto w = ReductionTranslation(z);
-	if constexpr(norm(w) < 1)
-		w = ReductionTranslation(1. / w);
-	return w;	
+	while(true){
+		z = ReductionTranslation(z);
+		if(norm(z) < 1. || (norm(z)==1. && real(z) < 0.) )
+			z = ReductionTranslation(-1. / z);
+		else break;
+	}
+	return z;	
+}
+
+template<class Gamma, int alphabet_length>
+auto RandomWord(int length, const std::vector<Gamma>& alphabet) -> Gamma
+{
+	static auto gen = RandomSequenceGenerator(1u, alphabet_length);
+	auto sequence = gen.Get(length);	
+	auto sequence_maker = [&alphabet](const Gamma& g, int b)
+		{
+			auto gb = g * alphabet[b]; 
+			return gb;
+		};
+	auto g = 
+	std::accumulate(begin(sequence), end(sequence), Gamma(), sequence_maker);	
+	return g;
 }
 
 
-
-
+template<class G,class C, int p,int r>
+auto HeckeSphereMobius(C z) -> decltype(auto) 
+{
+	auto gs = HeckeSphere<G,p,r>();
+	
+	auto nbs = std::array<C, size(gs)>();	
+	for(int i =0; i< size(gs); ++i) nbs[i] = Reduction(Mobius(z,gs[i]));	
+	return nbs;
+}
 
 }
