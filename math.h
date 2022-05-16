@@ -5,6 +5,9 @@
 #include <iostream>
 #include <functional>
 #include <numeric>
+#include <utility>
+#include <span>
+
 
 namespace Math
 {
@@ -110,7 +113,7 @@ constexpr auto HeckeUpNeighbour() -> Mat
 	}
 }
 
-	template <class Mat, int p, int r>
+template <class Mat, int p, int r>
 constexpr auto HeckeDown() -> decltype(auto) 
 {
 	if constexpr(r==0) return std::array<Mat,0>{};
@@ -205,13 +208,78 @@ auto RandomWord(int length, const std::vector<Gamma>& alphabet) -> Gamma
 
 
 template<class G,class C, int p,int r>
-auto HeckeSphereMobius(C z) -> decltype(auto) 
+constexpr auto HeckeSphereMobius(C z) -> decltype(auto) 
 {
 	auto gs = HeckeSphere<G,p,r>();
 	
-	auto nbs = std::array<C, size(gs)>();	
+	auto nbs = std::array<C, size(gs)>{};	
 	for(int i =0; i< size(gs); ++i) nbs[i] = Reduction(Mobius(z,gs[i]));	
 	return nbs;
 }
 
+template<int p, int... r>
+constexpr auto HeckeBallSize_impl(std::integer_sequence<int, r...>) -> int
+{
+	return ( ((p+1) * IntPow(p,r)) + ...  );
+}
+
+template<int p, int r, typename Indices = std::make_integer_sequence<int,r>>
+constexpr auto HeckeBallSize() -> int
+{
+	if constexpr(r==0) return 0;
+	else return HeckeBallSize_impl<p>(Indices{});	
+}
+
+template<class C,int N>
+constexpr auto AssignSphere(std::span<C> ball_sphere, std::array<C,N> sphere)
+{
+    auto b = begin(ball_sphere);
+    for(auto& s : sphere)
+        *(b++) = s;
+}
+
+template <class G, class C, int p, int... r>
+constexpr auto FillBall_impl(C z, std::span<C> ball, std::integer_sequence<int, r...>)
+{
+	(
+	AssignSphere<C, (p+1)*IntPow(p,r) >(ball.subspan(HeckeBallSize<p,r>()), HeckeSphereMobius<G,C,p,r+1>(z))
+	,...);    
+}
+
+
+template<class G, class C, int p, int r>
+constexpr auto FillBall(C z) -> std::array<C, HeckeBallSize<p,r>()>
+{
+	auto ball = std::array<C, HeckeBallSize<p,r>()>{};
+	
+	FillBall_impl<G,C,p>(z, std::span{ball}, std::make_integer_sequence<int,r>{});
+	return ball;
+}
+
+template<class G, class C, int p, int r>
+struct HeckeBall
+{
+	std::array<C, HeckeBallSize<p,r>()> ball_;
+	C z_;	
+	explicit HeckeBall(C z) : z_(z), ball_{FillBall<G,C,p,r>(z)}
+	{ }
+};
+
+/*
+template<class G,class C, int p,int max_r>
+constexpr auto HeckeSpheres(C z) -> std::vector<std::vector<C>>& 
+{
+	auto spheres = std::vector< std::vector<C> >(max_r);
+	for(int s =1; s<=max_r; ++s)
+	{
+		auto gs = HeckeSphere<G,p,s>();
+		auto& nbs = spheres[s];
+		nbs = std::vector<C>(size(gs));	
+		for(int i =0; i< size(gs); ++i)
+			 nbs[i] = Reduction(Mobius(z,gs[i]));	
+	}
+	return spheres;
+}
+
+*/
 }

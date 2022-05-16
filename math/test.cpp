@@ -241,3 +241,23 @@ TEST_CASE("HeckeSphere on Surface", "[Hecke]"){
 	REQUIRE(true);	
 }
 */
+
+TEST_CASE("HeckeBall Size", "[Hecke]"){
+	using namespace Math;
+	constexpr int p{5};
+	constexpr int r{3};
+	auto num = HeckeBallSize<p,r>();
+	auto exp_num = (p+1)*(1+p+p*p);
+	REQUIRE( num == exp_num);	
+}
+
+TEST_CASE("HeckeBall", "[Hecke, Mobius]"){
+	using namespace Math;
+	using C = std::complex<double>;
+	using G = GL2<int>;
+	constexpr int p{5};
+	constexpr int r{1};
+
+	auto ball = HeckeBall<G,C,p,r>(C{0.,1.});
+	for(auto& b : ball.ball_) std::cout << b << ", ";
+}
