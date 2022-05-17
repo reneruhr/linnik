@@ -7,7 +7,8 @@
 #include <numeric>
 #include <utility>
 #include <span>
-
+#include <complex>
+#include <vector>
 
 namespace Math
 {
@@ -138,10 +139,12 @@ constexpr auto HeckeDown() -> decltype(auto)
 		}}
 }
 
+
+//
 template <class Mat, int p, int r>
 constexpr auto HeckeSphere() -> decltype(auto) 
 {
-	if constexpr(r==0) return std::array<Mat,0>{};
+	if constexpr(r==0) return std::array<Mat,1>{Mat{}};
 	else{
 		std::array<Mat, (p+1)*IntPow(p,r-1)> neighbours;	
 		int i = 0;
@@ -213,21 +216,28 @@ constexpr auto HeckeSphereMobius(C z) -> decltype(auto)
 	auto gs = HeckeSphere<G,p,r>();
 	
 	auto nbs = std::array<C, size(gs)>{};	
-	for(int i =0; i< size(gs); ++i) nbs[i] = Reduction(Mobius(z,gs[i]));	
+	for(int i =0; i< static_cast<int>(size(gs)); ++i) nbs[i] = Reduction(Mobius(z,gs[i]));	
 	return nbs;
 }
 
 template<int p, int... r>
 constexpr auto HeckeBallSize_impl(std::integer_sequence<int, r...>) -> int
 {
-	return ( ((p+1) * IntPow(p,r)) + ...  );
+	return ( ((p+1) * IntPow(p,r)) + ... + 1  );
 }
 
 template<int p, int r, typename Indices = std::make_integer_sequence<int,r>>
 constexpr auto HeckeBallSize() -> int
 {
-	if constexpr(r==0) return 0;
+	if constexpr(r==0) return 1;
 	else return HeckeBallSize_impl<p>(Indices{});	
+}
+
+template<int p, int r>
+constexpr auto HeckeSphereSize() -> int
+{
+	if constexpr(r==0) return 1;
+	else return (p+1)*IntPow(p,r-1);
 }
 
 template<class C,int N>
@@ -239,19 +249,20 @@ constexpr auto AssignSphere(std::span<C> ball_sphere, std::array<C,N> sphere)
 }
 
 template <class G, class C, int p, int... r>
-constexpr auto FillBall_impl(C z, std::span<C> ball, std::integer_sequence<int, r...>)
+constexpr auto FillBall_impl(C z, std::span<C> ball, 
+	                     std::integer_sequence<int, r...>)
 {
-	(
-	AssignSphere<C, (p+1)*IntPow(p,r) >(ball.subspan(HeckeBallSize<p,r>()), HeckeSphereMobius<G,C,p,r+1>(z))
+	( AssignSphere<C, HeckeSphereSize<p,r+1>() >
+		(ball.subspan(HeckeBallSize<p,r>()),
+		   HeckeSphereMobius<G,C,p,r+1>(z))
 	,...);    
 }
-
 
 template<class G, class C, int p, int r>
 constexpr auto FillBall(C z) -> std::array<C, HeckeBallSize<p,r>()>
 {
 	auto ball = std::array<C, HeckeBallSize<p,r>()>{};
-	
+	ball[0] = z;	
 	FillBall_impl<G,C,p>(z, std::span{ball}, std::make_integer_sequence<int,r>{});
 	return ball;
 }
@@ -260,26 +271,48 @@ template<class G, class C, int p, int r>
 struct HeckeBall
 {
 	std::array<C, HeckeBallSize<p,r>()> ball_;
-	C z_;	
+	C z_;
 	explicit HeckeBall(C z) : z_(z), ball_{FillBall<G,C,p,r>(z)}
 	{ }
+
+	template <int s>
+	constexpr auto GetSphere() -> decltype(auto)
+	{
+		if constexpr(s==0) 
+			return std::span{ball_}.subspan(0, 1);
+		else
+			return std::span{ball_}.subspan
+			(HeckeBallSize<p,s-1>(), HeckeSphereSize<p,s>());
+	}
 };
 
-/*
-template<class G,class C, int p,int max_r>
-constexpr auto HeckeSpheres(C z) -> std::vector<std::vector<C>>& 
+template<class C, class F>
+constexpr auto AssignFloatSphere(std::span<F> float_sphere, std::span<C> sphere)
 {
-	auto spheres = std::vector< std::vector<C> >(max_r);
-	for(int s =1; s<=max_r; ++s)
-	{
-		auto gs = HeckeSphere<G,p,s>();
-		auto& nbs = spheres[s];
-		nbs = std::vector<C>(size(gs));	
-		for(int i =0; i< size(gs); ++i)
-			 nbs[i] = Reduction(Mobius(z,gs[i]));	
-	}
-	return spheres;
+    auto b = begin(float_sphere);
+    for(auto& s : sphere)
+        *(b++) = F{static_cast<float>(s.real()),
+		   static_cast<float>(s.imag())};
 }
 
-*/
+template <class C, class F,int p, class Ball, int... r>
+constexpr void FillFloatBall_impl(Ball& ball,
+			     std::vector<std::vector<F>>& float_ball,
+			     std::integer_sequence<int, r...>)
+{
+	(( float_ball[r] = std::vector<F>(HeckeSphereSize<p,r>())
+	, AssignFloatSphere<C, F>
+		      (std::span{float_ball[r]}, ball.template GetSphere<r>() ) )
+	, ...); 
+}
+
+template <class C, int p, int r, class Ball>
+auto HeckeBallFloatConverter(Ball& ball)
+{
+	using F = std::complex<float>;
+	std::vector< std::vector<F> > spheres(r+1);
+	
+	FillFloatBall_impl<C,F,p>(ball, spheres, std::make_integer_sequence<int,r+1>{});
+	return spheres;	
+}
 }
