@@ -1,6 +1,7 @@
 #pragma once
 
 #include <array>
+#include <span>
 
 #include "glm/glm.hpp"
 #include "glm/gtc/matrix_transform.hpp"
@@ -23,9 +24,17 @@ struct Camera
 
 	OrthFrame ortho_frame_;
 
+	Camera() { View(); Projection({-1.f,1.f,-1.f,1.f,-1.f,1.f}); }	
+	
+	auto PV() -> std::span<float,16>
+	{
+		return std::span<float,16>(glm::value_ptr(pv_), 16);
+	}
+
 	auto View() -> glm::mat4&
 	{
 		view_ = glm::lookAt(pos_, pos_ + front_, up_);	
+		pv_ =  projection_ * view_;
 		return view_; 
 	}
 	
@@ -35,8 +44,10 @@ struct Camera
 		projection_ = glm::ortho(frame[0], frame[1], 
 				  frame[2], frame[3],
 				  frame[4], frame[5]);
+		pv_ =  projection_ * view_;
 		return projection_;
 	}
 
 };
 }
+

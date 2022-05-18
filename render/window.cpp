@@ -19,10 +19,21 @@ title_(title), width_(width), height_(ratio * width), ratio_(ratio)
 {
 	window_ = Init(width_, height_, title_);
 	auto half_plane_view = std::make_shared<Camera>();
-	half_plane_view->Projection({-1.f,1.f,0.f, ratio ,-1.f,1.f});
+
+/*height    |  |    |  |   height = 2 * ratio
+ *          |  |    |  |
+ *          |  |    |  |
+ *          |  | __ |  |
+ *          |  |/  \|  |
+ *          | /|    |\ |
+ *0       -1|/_|____|_\|1   width = 2
+ */
+	half_plane_view->Projection({-1.f,1.f,0.f, 2.f * ratio ,-1.f,1.f});
 	cameras_.push_back(half_plane_view);
+	active_camera_ = cameras_.back();
 	glfwSetWindowUserPointer(window_, reinterpret_cast<void*>(this));
-	glfwGetFramebufferSize(window_, &width_, &height_);	
+	glfwGetFramebufferSize(window_, &width_, &height_);
+	Resize(width_,height_);
 }
 
 void Window::Run()
@@ -44,6 +55,13 @@ void Window::Run()
 void Window::Exit()
 {
 	glfwTerminate();
+}
+
+void Window::Resize(int w, int h) 
+{ 
+	width_ = w; 
+	height_ = h; 
+	active_camera_->Projection({-1.f,1.f, 0.f, 2.f*h/w,-1.f,1.f});
 }
 
 void Window::AddDrawCall(std::function<void(void)> fct)

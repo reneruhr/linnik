@@ -247,7 +247,7 @@ TEST_CASE("HeckeBall Size", "[Hecke]"){
 	constexpr int p{5};
 	constexpr int r{3};
 	auto num = HeckeBallSize<p,r>();
-	auto exp_num = (p+1)*(1+p+p*p);
+	auto exp_num = (p+1)*(1+p+p*p)+1;
 	REQUIRE( num == exp_num);	
 }
 
@@ -255,9 +255,57 @@ TEST_CASE("HeckeBall", "[Hecke, Mobius]"){
 	using namespace Math;
 	using C = std::complex<double>;
 	using G = GL2<int>;
-	constexpr int p{5};
-	constexpr int r{1};
+	constexpr int p{2};
+	constexpr int r{2};
+	C z{0.,1.};
+	
+	auto ball = HeckeBall<G,C,p,r>(z);
 
-	auto ball = HeckeBall<G,C,p,r>(C{0.,1.});
-	for(auto& b : ball.ball_) std::cout << b << ", ";
+	auto CompareSphere = [](auto sphere1, auto sphere2){
+		auto a= begin(sphere1);
+		bool ok = true;
+		for(auto& b : sphere2 ) {
+			ok = ok && (b == *(a++));		
+		}
+		return ok;
+	};
+	auto s0 = CompareSphere(HeckeSphereMobius<G,C,p,0>(z), ball.GetSphere<0>());
+	auto s1 = CompareSphere(HeckeSphereMobius<G,C,p,1>(z), ball.GetSphere<1>());
+	auto s2 = CompareSphere(HeckeSphereMobius<G,C,p,2>(z), ball.GetSphere<2>());
+	REQUIRE( s0== true );	
+	REQUIRE( s1== true );	
+	REQUIRE( s2== true );	
+}
+
+
+TEST_CASE("HeckeBall Large", "[Hecke, Mobius]"){
+	using namespace Math;
+	using C = std::complex<double>;
+	using G = GL2<int>;
+	constexpr int p{3};
+	constexpr int r{9}; // r=10 crashes at runtime
+	C z{0.,1.};
+	
+	REQUIRE( 1 < HeckeBallSize<p,r>() );
+	REQUIRE( HeckeSphereMobius<G,C,p,r>(z)[1].imag() > 0. );
+	REQUIRE( HeckeBall<G,C,p,r>(z).ball_[0].real() < 2.);
+}
+
+TEST_CASE("HeckeBall Float", "[Datatype]"){
+	using namespace Math;
+	using C = std::complex<double>;
+	using F = std::complex<float>;
+	using G = GL2<int>;
+	constexpr int p{3};
+	constexpr int r{5}; // r=10 crashes at runtime
+	C z{0.,1.};
+
+	auto ball = HeckeBall<G,C,p,r>(z);
+	auto float_ball = HeckeBallFloatConverter<C,p,r>(ball);	
+	float eps = 0.0001;
+	for(int i = 0; i < size(ball.GetSphere<1>()); ++i) {
+		auto e = 
+	static_cast<std::complex<float>>(ball.GetSphere<1>()[i]) - float_ball[1][i];
+		REQUIRE(abs(e) < eps);
+	}
 }
