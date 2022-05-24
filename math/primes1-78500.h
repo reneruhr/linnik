@@ -1,4 +1,13 @@
-constexpr std::array<int, 78500> primes ={
+#pragma once
+
+namespace Math{
+
+struct Primes{
+static constexpr auto Get() -> std::span<const int, 78500>
+{
+	return std::span(primes_);
+}
+static constexpr std::array<int, 78500> primes_ ={
 2,3,5,7,11,13,17,19,23,29,
 31,37,41,43,47,53,59,61,67,71,
 73,79,83,89,97,101,103,107,109,113,
@@ -7850,3 +7859,5 @@ constexpr std::array<int, 78500> primes ={
 999721,999727,999749,999763,999769,999773,999809,999853,999863,999883,
 999907,999917,999931,999953,999959,999961,999979,999983,1000003,1000033
 };
+};
+}

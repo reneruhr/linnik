@@ -12,15 +12,95 @@
 
 using namespace std::literals::complex_literals;
 
+TEST_CASE("Primes", "[BinaryForms]")
+{
+	using namespace Math;
+	REQUIRE( IsPrime(1063) == true );
+	REQUIRE( IsPrimeAndFundamental(-5923) == true );
+}
 
-TEST_CASE("IntPow", "[Utils]"){
+TEST_CASE("GCD", "[Arithmetic]")
+{
+using namespace Math;
+
+	REQUIRE( Gcd(12,6) == 6 );
+	REQUIRE( Gcd(3*8*9,10*7*8) == 8 );
+	REQUIRE( Gcd(11,7) == 1 );
+	REQUIRE( Gcd(11,7,5) == 1 );
+	REQUIRE( Gcd(11,7,14,23) == 1 );
+	REQUIRE( Gcd(3,3*5,3*5*7) == 3 );
+	REQUIRE( Gcd(3*11,3*5*11,3*5*7*11) == 3*11 );
+}
+
+TEST_CASE("SquareRootMod", "[Arithmetic]")
+{
+using namespace Math;
+	auto tester =[](int x, int p)
+	{ 
+		auto res = *SquareRootMod(ModPow(x,2,p), p);
+		return  ( (res-x) % p == 0 ) || ( (res+x) % p == 0 );
+	};
+	REQUIRE( tester(81,5) == true ); 
+	REQUIRE( tester(101,11) == true ); 
+	REQUIRE( tester(23424,101) == true ); 
+}
+
+TEST_CASE("Integer power mod p", "[Arithmetic]"){
+using namespace Math;
+	REQUIRE ( (91*91*91 ) % 5 == ModPow(91,3,5) );
+	REQUIRE ( (3*3*3*3*3*3) % 2 == ModPow(3,6,2) );
+}
+
+TEST_CASE("Kronecker", "[Arithmetic]"){
+using namespace Math;
+	constexpr auto res  = std::array<int, 5>
+		{ 1-Kronecker(2,7),
+		  1-Kronecker(7,9),
+		  -1-Kronecker(8,11),
+		  0-Kronecker(14,12),
+		  1-Kronecker(18,7) };
+	REQUIRE( res == std::array<int,5>{} );
+}
+
+TEST_CASE("Extended Euclid", "[Arithmetic]"){
+using namespace Math;
+	constexpr auto res  = ExtendedEuclid(48,18);
+	constexpr auto u = std::get<0>(res);
+	constexpr auto v = std::get<1>(res);
+	constexpr auto d = std::get<2>(res);
+	REQUIRE( d == 6 );
+	REQUIRE( u*48 + v* 18 == d); 	
+}
+
+TEST_CASE("Constexpr Square", "[Arithmetic]"){
+{using namespace Math;
+	constexpr auto y = Square(12345*12345);
+	auto close =  ( abs((y-12345)) <= 0.000001 ); 
+	REQUIRE( close ); 
+}}
+
+TEST_CASE("FastPow", "[Arithmetic]"){
+{using namespace Math;
+	constexpr auto r1 = FastPow(2,0);
+	constexpr auto r2 = FastPow(2,1);
+	constexpr auto r3 = FastPow(2,2);
+	constexpr auto r4 = FastPow(2,3);
+	constexpr auto s  = FastPow(83l,5);
+	REQUIRE(  r1 == 1 ); 
+	REQUIRE(  r2 == 2 ); 
+	REQUIRE(  r3 == 4 ); 
+	REQUIRE(  r4 == 8 ); 
+	REQUIRE(  s  == 83l*83*83*83*83 ); 
+}}
+
+TEST_CASE("IntPow", "[Arithmetic]"){
 {using namespace Math;
 	REQUIRE( IntPow(2,0) == 1 ); 
 	REQUIRE( IntPow(2,1) == 2 ); 
 	REQUIRE( IntPow(2,2) == 4 ); 
 }}
 
-TEST_CASE("Ceil and Floor", "[Utils]"){
+TEST_CASE("Ceil and Floor", "[Arithmetic]"){
 	auto x = 3.5;
 	using namespace Math;
 	REQUIRE( IntCeil(x)==4 ); 	
@@ -308,4 +388,6 @@ TEST_CASE("HeckeBall Float", "[Datatype]"){
 	static_cast<std::complex<float>>(ball.GetSphere<1>()[i]) - float_ball[1][i];
 		REQUIRE(abs(e) < eps);
 	}
+
+
 }

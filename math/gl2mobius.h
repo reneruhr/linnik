@@ -1,6 +1,6 @@
 #pragma once
 #include "random_word.h"
-#include "basic.h"
+#include "arithmetic.h"
 #include <array>
 #include <cmath>
 #include <iostream>
