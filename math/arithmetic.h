@@ -6,9 +6,15 @@ namespace Math
 // using gcc built-in constexpr
 
 
-constexpr double Square(double x)
+constexpr double SquareRoot(double x)
 {
 	return std::pow(x, 0.5);
+} 
+
+template<class Int>
+constexpr Int Abs(Int x)
+{
+	return x > 0 ? x : -x;
 } 
 
 template<class T>

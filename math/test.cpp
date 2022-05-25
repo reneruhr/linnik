@@ -12,18 +12,59 @@
 
 using namespace std::literals::complex_literals;
 
-TEST_CASE("Primes", "[BinaryForms]")
+
+TEST_CASE("ClassNumber", "[BinaryForms]")
 {
 	using namespace Math;
-	REQUIRE( IsPrime(1063) == true );
-	REQUIRE( IsPrimeAndFundamental(-5923) == true );
+	{
+	using Q = QuadraticForm<long,-23>; 	
+	constexpr auto h_forms =  MakeReducedForms<long, -23>();
+	constexpr auto h = std::get<0>(h_forms);
+	constexpr auto forms = std::get<1>(h_forms);
+
+	REQUIRE( h==3 );
+	REQUIRE( std::find(begin(forms),begin(forms)+3, Q(1,1,6)) != begin(forms)+3 );
+	}	
+	{
+	constexpr auto D = -47;
+	using Q = QuadraticForm<long,D>; 	
+	constexpr auto h = std::get<0>(MakeReducedForms<long, D>());
+	REQUIRE( h==5 );
+	}
+	{
+	constexpr auto D = -251;		
+	using Q = QuadraticForm<long,D>; 	
+	constexpr auto h = std::get<0>(MakeReducedForms<long, D>());
+	REQUIRE( h==7 );
+	}
+}
+
+TEST_CASE("IsPrimitive", "[BinaryForms]")
+{
+	using namespace Math;
+	using Q = QuadraticForm<long,-23>; 	
+	constexpr auto primitive = IsPrimitive(Q(1,1,6));	
+	constexpr auto reduced = IsReduced(Q(2,1,3));	
+	
+	REQUIRE( primitive == true );	
+	REQUIRE( reduced == true );	
+}
+
+TEST_CASE("Primes and Fundamental", "[BinaryForms]")
+{
+	using namespace Math;
+	constexpr auto res1 = IsPrime(1063);
+	REQUIRE(  res1 == true );
+	constexpr auto res2 = IsPrimeAndFundamental(-5923);
+	REQUIRE( res2 == true );
 }
 
 TEST_CASE("GCD", "[Arithmetic]")
 {
 using namespace Math;
 
-	REQUIRE( Gcd(12,6) == 6 );
+	constexpr auto res = Gcd(12,6);
+	REQUIRE( res == 6 );
 	REQUIRE( Gcd(3*8*9,10*7*8) == 8 );
 	REQUIRE( Gcd(11,7) == 1 );
 	REQUIRE( Gcd(11,7,5) == 1 );
@@ -40,14 +81,16 @@ using namespace Math;
 		auto res = *SquareRootMod(ModPow(x,2,p), p);
 		return  ( (res-x) % p == 0 ) || ( (res+x) % p == 0 );
 	};
-	REQUIRE( tester(81,5) == true ); 
+	constexpr auto res = tester(81,5);
+	REQUIRE( res == true ); 
 	REQUIRE( tester(101,11) == true ); 
 	REQUIRE( tester(23424,101) == true ); 
 }
 
 TEST_CASE("Integer power mod p", "[Arithmetic]"){
 using namespace Math;
-	REQUIRE ( (91*91*91 ) % 5 == ModPow(91,3,5) );
+	constexpr auto res =ModPow(91,3,5);
+	REQUIRE ( (91*91*91 ) % 5 == res );
 	REQUIRE ( (3*3*3*3*3*3) % 2 == ModPow(3,6,2) );
 }
 
@@ -74,7 +117,7 @@ using namespace Math;
 
 TEST_CASE("Constexpr Square", "[Arithmetic]"){
 {using namespace Math;
-	constexpr auto y = Square(12345*12345);
+	constexpr auto y = SquareRoot(12345*12345);
 	auto close =  ( abs((y-12345)) <= 0.000001 ); 
 	REQUIRE( close ); 
 }}
@@ -304,7 +347,7 @@ TEST_CASE("Mobius Reduction", "[Complex]"){
 					return ( abs(real(z)+real(w)) < 2*eps); 
 			return false;
 		};
-	for(int i = 0; i< size(zs); ++i)
+	for(std::size_t i = 0; i< size(zs); ++i)
 		REQUIRE(  ApproxEqual(zs[i], zs_moved[i]));
 }
 /*
@@ -383,7 +426,7 @@ TEST_CASE("HeckeBall Float", "[Datatype]"){
 	auto ball = HeckeBall<G,C,p,r>(z);
 	auto float_ball = HeckeBallFloatConverter<C,p,r>(ball);	
 	float eps = 0.0001;
-	for(int i = 0; i < size(ball.GetSphere<1>()); ++i) {
+	for(std::size_t i = 0; i < size(ball.GetSphere<1>()); ++i) {
 		auto e = 
 	static_cast<std::complex<float>>(ball.GetSphere<1>()[i]) - float_ball[1][i];
 		REQUIRE(abs(e) < eps);
