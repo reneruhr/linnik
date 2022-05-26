@@ -12,6 +12,34 @@
 
 using namespace std::literals::complex_literals;
 
+TEST_CASE("Compose", "[BinaryForms]")
+{
+	using namespace Math;
+	using QF = QuadraticForm<long,-71>; 
+	REQUIRE( IsPrimeAndFundamental(-71) == true);
+	QF A{4,3,5};
+	QF B{3,1,6};
+	QF C{2,1,9};
+	QF AB = Composition(A,B);
+	REQUIRE( AB == C );
+}
+
+TEST_CASE("Reduce", "[BinaryForms]")
+{
+	using namespace Math;
+	using QF = QuadraticForm<long,-23>; 	
+	auto S = [](auto Q) { return decltype(Q)(Q.c_, -Q.b_, Q.a_); };
+	auto T = [](auto Q) { return decltype(Q)(Q.a_, Q.b_-2*Q.a_, Q.c_+Q.a_-Q.b_); };
+	auto r = QF(1,1,6);
+	auto q = S(r);
+	auto q2 = S(T(T(T(T(S(T(T(S(r)))))))));
+	auto p = Reduce(q);
+	auto p2 = Reduce(q2);
+
+	REQUIRE( p == r);
+	REQUIRE( p2 == r);
+}
+
 
 TEST_CASE("ClassNumber", "[BinaryForms]")
 {
@@ -36,6 +64,13 @@ TEST_CASE("ClassNumber", "[BinaryForms]")
 	using Q = QuadraticForm<long,D>; 	
 	constexpr auto h = std::get<0>(MakeReducedForms<long, D>());
 	REQUIRE( h==7 );
+	
+	constexpr auto forms  = std::get<1>(MakeReducedForms<long, D>());
+	auto n{0};
+	for( auto&&Q : forms) { 
+		REQUIRE( IsReduced(Q) == true );
+		n++; if(n==h) break;
+	}
 	}
 }
 

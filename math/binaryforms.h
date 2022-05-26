@@ -17,6 +17,12 @@ struct QuadraticForm
 		return (A.a_ == B.a_) and (A.b_ == B.b_) and (A.c_ == B.c_ ); 
 	} 
 	
+	friend 	std::ostream& operator<<(std::ostream& os, const QuadraticForm<Int,D>& A)
+	{
+		os << '(' << A.a_ << ", " << A.b_ << ", " << A.c_ << ')';
+		return os;
+	}
+	
 };
 
 constexpr bool IsPrime(int p)
@@ -81,6 +87,73 @@ constexpr auto MakeReducedForms() -> std::tuple<int, std::array<QuadraticForm<In
 		if(b > B) break;
 	};
 	return {h,forms};
+}
+
+template<class Int,int D>
+constexpr auto Reduce(QuadraticForm<Int, D> Q) -> QuadraticForm<Int, D>
+{
+	auto& a = Q.a_;
+	auto& b = Q.b_;
+	auto& c = Q.c_;
+
+	bool init = true;
+	while(true){
+		if(not init or  -a < b and b <= a){
+			if(a > c){
+				b = -b;
+				using std::swap;
+				swap(a,c);
+			}else{
+				if((a==c) and (b<0)) b=-b;
+				break;	
+			}
+		}		
+
+		auto q = b / (2*a);
+		auto r = b % (2*a);
+		if(r > a) { r=r-2*a; q++; }
+		c -= (b+r)*q/2;
+		b = r;
+		if(init) init = false;
+	}
+	return Q;
+}
+
+template<class Int, int D>
+constexpr auto Composition(QuadraticForm<Int, D> P, QuadraticForm<Int, D> Q) -> QuadraticForm<Int,D>
+{
+	Int a,b,c;
+	Int y1,y2,x1,x2,u,v,v1,v2,d,d1,r,s,n;
+	using std::swap;
+	if(P.a_ > Q.a_) swap(P,Q);
+	s = (P.b_+Q.b_)/2;
+	n = Q.b_-s;
+	
+	if(Q.a_%P.a_ == 0){
+		y1=0; d=P.a_;
+	}else{
+		auto uvd = ExtendedEuclid(Q.a_, P.a_);
+		u = std::get<0>(uvd);
+		v = std::get<1>(uvd);
+		d = std::get<2>(uvd);
+		y1= u;
+	}
+	if(s%d == 0){
+		y2=-1; x2=0; d1=d;
+	}else{
+		auto uvd1 = ExtendedEuclid(s, d);
+		u = std::get<0>(uvd1);
+		v = std::get<1>(uvd1);
+		d1 = std::get<2>(uvd1);
+		x2 = u;	
+		y2 = -v;
+	}
+	
+	v1 = P.a_ / d1; v2 = Q.a_ / d1;
+	r = (y1*y2*n-x2*Q.c_) % v1;
+	b = Q.b_ + 2*v2*r; a = v1*v2;
+	c = (Q.c_*d1 + r*(Q.b_+v2*r))/v1;
+	return Reduce(decltype(P)(a,b,c));
 }
 
 }
