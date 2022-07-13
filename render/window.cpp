@@ -1,7 +1,7 @@
 #include "window.h"
 #include "camera.h"
 #include "glfw_callbacks.h"
-
+#include "gui.h"
 #include <GL/glew.h>
 #include <GLFW/glfw3.h>
 
@@ -34,6 +34,7 @@ title_(title), width_(width), height_(ratio * width), ratio_(ratio)
 	glfwSetWindowUserPointer(window_, reinterpret_cast<void*>(this));
 	glfwGetFramebufferSize(window_, &width_, &height_);
 	Resize(width_,height_);
+	GUI::Setup(window_);
 }
 
 void Window::Run()
@@ -43,18 +44,27 @@ void Window::Run()
 		glClearColor(.3f,.2f,.2f,1.f);
 		glClear(GL_COLOR_BUFFER_BIT);
 		
-		ProcessInput(window_);
-		
-		for(auto& draw : drawcalls_) draw();		
-	
-		glfwSwapBuffers(window_);
 		glfwPollEvents();
+		GUI::NewFrame();
+		ProcessInput(window_);
+
+		for(auto& draw : drawcalls_) draw();		
+		GUI::DrawInitial();
+		GUI::DrawFinal();
+		glfwSwapBuffers(window_);
 	}
 }
 
 void Window::Exit()
 {
-	glfwTerminate();
+  GUI::Clean(); 
+  glfwDestroyWindow(window_);
+  glfwTerminate();
+}
+
+void Window::MousePress(double x, double y)
+{
+  for(auto& event: eventcalls_) event({x,y});		
 }
 
 void Window::Resize(int w, int h) 
@@ -67,6 +77,11 @@ void Window::Resize(int w, int h)
 void Window::AddDrawCall(std::function<void(void)> fct)
 {
 	drawcalls_.push_back(std::move(fct));
+}
+
+void Window::AddEventCall(std::function<void(const EventData&)> fct)
+{
+	eventcalls_.push_back(std::move(fct));
 }
 
 auto Init(int w, int h, std::string title) -> GLFWwindow* 
@@ -91,6 +106,7 @@ auto Init(int w, int h, std::string title) -> GLFWwindow*
 
 	glfwMakeContextCurrent(window);	
 	glfwSetFramebufferSizeCallback(window, FBCallback);
+	glfwSetMouseButtonCallback(window, MouseButtonCallback);
 	
 	glewExperimental = GL_TRUE;
 	if(auto e = glewInit(); GLEW_OK != e)

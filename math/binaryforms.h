@@ -22,7 +22,6 @@ struct QuadraticForm
 		os << '(' << A.a_ << ", " << A.b_ << ", " << A.c_ << ')';
 		return os;
 	}
-	
 };
 
 constexpr bool IsPrime(int p)
@@ -34,6 +33,21 @@ constexpr bool IsPrimeAndFundamental(int D)
 {
 	return  IsPrime(Abs(D)) && ( (D-1)%4 == 0 );
 }
+
+constexpr int SmallestSplitPrime(int D)
+{
+	for(auto p : Primes::Get().subspan(1))
+		if(Kronecker(D,p)==1) return p;
+	return 0;
+}
+
+constexpr int SmallestFundamentalPrimeAbove(int absD)
+{
+	auto D_ptr = std::lower_bound(begin(Primes::Get()),end(Primes::Get()), absD);
+	while( (-*D_ptr -1) % 4 != 0) ++D_ptr ;
+	return -*D_ptr ;
+}
+
 
 template <class Int, int D>
 constexpr bool Valid(Int a, Int b, Int c)
@@ -89,6 +103,8 @@ constexpr auto MakeReducedForms() -> std::tuple<int, std::array<QuadraticForm<In
 	return {h,forms};
 }
 
+// Cohen 4.5.2
+// Q positive
 template<class Int,int D>
 constexpr auto Reduce(QuadraticForm<Int, D> Q) -> QuadraticForm<Int, D>
 {
@@ -109,8 +125,9 @@ constexpr auto Reduce(QuadraticForm<Int, D> Q) -> QuadraticForm<Int, D>
 			}
 		}		
 
-		auto q = b / (2*a);
-		auto r = b % (2*a);
+		//auto q = b / (2*a);
+		auto r = PosMod(b,2*a);
+		auto q = (b-r) / (2*a);
 		if(r > a) { r=r-2*a; q++; }
 		c -= (b+r)*q/2;
 		b = r;
@@ -149,11 +166,100 @@ constexpr auto Composition(QuadraticForm<Int, D> P, QuadraticForm<Int, D> Q) -> 
 		y2 = -v;
 	}
 	
-	v1 = P.a_ / d1; v2 = Q.a_ / d1;
-	r = (y1*y2*n-x2*Q.c_) % v1;
-	b = Q.b_ + 2*v2*r; a = v1*v2;
+	v1 = P.a_ / d1; 
+	v2 = Q.a_ / d1;
+	r = PosMod(y1*y2*n-x2*Q.c_, v1);
+	b = Q.b_ + 2*v2*r;
+	a = v1*v2;
 	c = (Q.c_*d1 + r*(Q.b_+v2*r))/v1;
 	return Reduce(decltype(P)(a,b,c));
 }
+
+
+
+//x^2 = D Mod 4p
+// where
+// p odd and splits
+// D = 1 mod 4 
+constexpr auto SquareRootDMod4p(int D, int p) -> int
+{
+	auto x = *SquareRootMod(D,p);
+	if(not (x&1)) x+=p;
+	return x;
+}
+
+template <class Int, int D>
+constexpr auto PrimeFactorIdeal(int p) -> QuadraticForm<Int,D>
+{
+	auto b = SquareRootDMod4p(D,p);
+	return QuadraticForm<Int,D>(p,b, (b*b-D) / (4*p));
+}
+
+template <class QF>
+constexpr auto MakePositive(QF f) -> QF
+{
+	if(f.a_ < 0) return QF(-f.a_, f.b_, -f.c_);
+	return f;
+}
+
+template<class Int, int D, int p>
+constexpr auto Necklace(QuadraticForm<Int, D> f) -> 
+std::pair<int, std::array<QuadraticForm<Int, D>, Abs(D)>>
+{
+	auto P = PrimeFactorIdeal<Int,D>(p);
+	auto necklace = std::array<QuadraticForm<Int, D>, Abs(D)>{};
+	auto b = begin(necklace);
+	*b = f;
+	while(true) {
+		if(auto Q = Composition(*b++, P); Q != f) *b = Q;
+		else return {std::distance(begin(necklace), b), necklace};
+	} 
+}
+
+
+template<class Int, int D, int p, int orbit_bound, class Map>
+constexpr auto Orbit(QuadraticForm<Int, D> f, Map map) -> 
+std::pair<int, std::array<QuadraticForm<Int, D>, orbit_bound>>
+{
+	auto necklace = std::array<QuadraticForm<Int, D>, orbit_bound>{};
+	auto b = begin(necklace);
+	*b = f;
+	while(true) {
+		if(auto Q = map(*b++); Q != f) *b = Q;
+		else return {std::distance(begin(necklace), b), necklace};
+	} 
+}
+// FormsContainer = std::tuple<int, std::array<QuadraticForm<Int,D>,Abs(D)>>
+// returns array with orbit lengths.
+template <class FormsContainer, class Int, int D, int p>
+constexpr auto PartitionForms(FormsContainer& sized_forms) 
+-> std::pair<int, std::array<int, Abs(D)>>
+{
+	using QF = QuadraticForm<Int,D>;
+	auto h = std::get<0>(sized_forms);	
+	auto pts = std::get<1>(sized_forms);
+
+	auto b = begin(pts);
+	auto e = b+h;
+
+	constexpr auto bound = Abs(D);
+	auto P = PrimeFactorIdeal<Int,D>(p);
+	auto times_p = [P](const QF& f) { return Composition(f,P); };
+	
+	auto sizes = std::array<int, Abs(D)>{};
+	auto s = begin(sizes);
+
+	while(b != e){
+		auto sized_necklace = Orbit<Int, D, p, bound>(*b, times_p);
+		auto necklace = std::get<1>(sized_necklace);
+		*s++ = std::get<0>(sized_necklace);
+		b = std::partition(b,e, 
+			[&necklace](const auto& form) { 
+			return std::find(begin(necklace),end(necklace), form) 
+			       != end(necklace); }); 
+	}
+	return {std::distance(begin(sizes),s), sizes};	
+}
+
 
 }

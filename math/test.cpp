@@ -11,6 +11,99 @@
 #include <iomanip>
 
 using namespace std::literals::complex_literals;
+using namespace Math;
+
+TEST_CASE("Find multiple Orbits", "[BinaryForm]")
+{
+
+
+
+}
+
+TEST_CASE("PartitionForms", "[BinaryForm]")
+{
+
+	constexpr auto D = SmallestFundamentalPrimeAbove(50000);
+	constexpr auto p = SmallestSplitPrime(D);	
+	
+	using QF = QuadraticForm<long,D>; 
+	
+	auto sized_cm_points = MakeReducedForms<long, D>();	
+	auto orbit_sizes = PartitionForms<decltype(sized_cm_points), long,D,p>(sized_cm_points);	
+
+	for(auto b = begin(std::get<1>(orbit_sizes));  b<std::get<0>(orbit_sizes)+begin(std::get<1>(orbit_sizes)); ++b)
+		std::cout <<*b << ", "; 
+}
+
+TEST_CASE("Necklace", "[BinaryForm]")
+{
+	constexpr auto D = SmallestFundamentalPrimeAbove(50000);
+	REQUIRE( IsPrimeAndFundamental(D) == true );
+	constexpr auto p = SmallestSplitPrime(D);	
+	
+	using QF = QuadraticForm<long,D>; 
+	
+	constexpr auto sized_cm_points = MakeReducedForms<long, D>();	
+	constexpr auto h = std::get<0>(sized_cm_points);	
+	constexpr auto pts = std::get<1>(sized_cm_points);
+	
+	std::cout << "Found Fundamental D=" << D << " with split prime p=" << p
+		  << " of class number h(D)=" << h << ":\n";
+	// for(auto&& f : std::span(pts).subspan(0,h))
+	//	std::cout << f << "\n ";
+
+	constexpr auto sized_necklace = Necklace<long, D, p>(pts[0]);	
+	auto b = begin(std::get<1>(sized_necklace));
+	auto girth = std::get<0>(sized_necklace);
+	auto e = b+girth;
+	auto c = b;
+	while( c != e)
+		REQUIRE(std::find(begin(pts), end(pts), *c++) != end(pts) );
+		/*{
+		if(std::find(begin(pts), end(pts), *c++) == end(pts) )
+			std::cout << *(c-1) << " not found.\n"
+			<< "Reduced: " << IsReduced(*(c-1)) << '\n'
+			<< "MakeReduce: " << Reduce(*(c-1)) << '\n';
+		}*/
+
+	std::cout  << "Necklace of size " << girth << " at the point "
+		  << *c << " has orbit: \n"; 
+	while(c != b)
+		std::cout << *--c << ", ";
+}
+
+TEST_CASE("log", "[Arithmetic]")
+{
+	REQUIRE( Abs(Log(5*5,5)-2.) < 0.00001 );
+}
+
+TEST_CASE("PrimeFactorIdeal", "[BinaryForms])")
+{
+	constexpr auto D{-11};
+	constexpr auto p{5};
+	using QF = QuadraticForm<int,D>; 
+	REQUIRE( Kronecker(D,p)==1 );
+	constexpr auto f = Reduce(MakePositive(QF(-15,17,-5)));
+	constexpr auto P = Reduce(PrimeFactorIdeal<int,D>(p));
+	REQUIRE( f == P );
+}
+
+TEST_CASE("Squareroot of D mod 4p", "[Binaryforms]")
+{
+	using namespace Math;
+	{	
+	constexpr auto D{-71};
+	constexpr auto p = SmallestSplitPrime(D);
+	constexpr auto b = SquareRootDMod4p(D,p);
+	REQUIRE ((b*b - D)%(4*p) == 0);
+	}
+	{	
+	constexpr auto D{-23};
+	constexpr auto p = SmallestSplitPrime(D);
+	constexpr auto b = SquareRootDMod4p(D,p);
+	REQUIRE ((b*b - D)%(4*p) == 0);
+	}
+}
 
 TEST_CASE("Compose", "[BinaryForms]")
 {
@@ -94,6 +187,15 @@ TEST_CASE("Primes and Fundamental", "[BinaryForms]")
 	REQUIRE( res2 == true );
 }
 
+TEST_CASE("FastGCD", "[Arithmetic]")
+{
+using namespace Math;
+
+	REQUIRE( Gcd(11,5) == FastGcd(11,5)  );
+	REQUIRE( Gcd(11*3,11) == FastGcd(11*3,11) );
+	REQUIRE( Gcd(3*5,3*5*7) == FastGcd(3*5,3*5*7)  );
+}
+
 TEST_CASE("GCD", "[Arithmetic]")
 {
 using namespace Math;
@@ -106,6 +208,7 @@ using namespace Math;
 	REQUIRE( Gcd(11,7,14,23) == 1 );
 	REQUIRE( Gcd(3,3*5,3*5*7) == 3 );
 	REQUIRE( Gcd(3*11,3*5*11,3*5*7*11) == 3*11 );
+
 }
 
 TEST_CASE("SquareRootMod", "[Arithmetic]")

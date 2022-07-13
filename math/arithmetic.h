@@ -3,8 +3,17 @@
 namespace Math
 {
 
-// using gcc built-in constexpr
 
+template <class Int>
+constexpr Int PosMod(Int a, Int b)
+{
+    return (a % b + b) % b;
+}
+
+constexpr double Log(double x, double base) 
+{ // using gcc built-in constexpr
+	return std::log(x)/std::log(base);
+}
 
 constexpr double SquareRoot(double x)
 {
@@ -87,6 +96,17 @@ constexpr std::tuple<Int, Int, Int> ExtendedEuclid(Int a, Int b)
 }
 
 template<class Int>
+constexpr Int FastGcd(Int a, Int b)
+{
+	while(b != 0) {
+		a = a%b;
+		using std::swap;
+		swap(a,b);	
+	}
+	return a;
+} 
+
+template<class Int>
 constexpr Int Gcd(Int a, Int b)
 {
 	auto  d = std::get<2>(ExtendedEuclid(a,b));
@@ -156,4 +176,5 @@ constexpr std::optional<int> SquareRootMod(Int a, int p)
 		b = ( b * y ) % p;	
 	}
 }
+
 }

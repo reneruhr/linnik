@@ -1,5 +1,5 @@
 #pragma once
-
+#include <span>
 namespace Math{
 
 struct Primes{
