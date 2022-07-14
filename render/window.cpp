@@ -12,7 +12,14 @@ namespace Render
 
 auto Init(int,int,std::string) -> GLFWwindow*;
 
-	
+void Window::UpdateViewport()
+{
+  static int w, h;
+  glfwGetFramebufferSize(window_, &w, &h);
+  glViewport(0, 0, w, h);
+  //Resize(w,h);
+}
+
 Window::Window(std::string title, float ratio , int width)
 :
 title_(title), width_(width), height_(ratio * width), ratio_(ratio)
@@ -39,20 +46,20 @@ title_(title), width_(width), height_(ratio * width), ratio_(ratio)
 
 void Window::Run()
 {
-	while(!glfwWindowShouldClose(window_))
-	{
-		glClearColor(.3f,.2f,.2f,1.f);
-		glClear(GL_COLOR_BUFFER_BIT);
+  while(!glfwWindowShouldClose(window_))
+  {
+    glClearColor(.3f,.2f,.2f,1.f);
+    glClear(GL_COLOR_BUFFER_BIT);
 		
-		glfwPollEvents();
-		GUI::NewFrame();
-		ProcessInput(window_);
+    glfwPollEvents();
+    GUI::NewFrame();
+    ProcessInput(window_);
 
-		for(auto& draw : drawcalls_) draw();		
-		GUI::DrawInitial();
-		GUI::DrawFinal();
-		glfwSwapBuffers(window_);
-	}
+    for(auto& draw : drawcalls_) draw();		
+    GUI::DrawInitial();
+    GUI::DrawFinal();
+    glfwSwapBuffers(window_);
+  }
 }
 
 void Window::Exit()
@@ -64,59 +71,64 @@ void Window::Exit()
 
 void Window::MousePress(double x, double y)
 {
+  static int w, h;
+  glfwGetWindowSize(window_, &w, &h);
+  x = 2. * x / w - 1;
+  y = h-y;
+  y = (2. * y) / w;
   for(auto& event: eventcalls_) event({x,y});		
 }
 
 void Window::Resize(int w, int h) 
 { 
-	width_ = w; 
-	height_ = h; 
-	active_camera_->Projection({-1.f,1.f, 0.f, 2.f*h/w,-1.f,1.f});
+  width_ = w; 
+  height_ = h; 
+  active_camera_->Projection({-1.f,1.f, 0.f, 2.f*h/w,-1.f,1.f});
 }
 
 void Window::AddDrawCall(std::function<void(void)> fct)
 {
-	drawcalls_.push_back(std::move(fct));
+  drawcalls_.push_back(std::move(fct));
 }
 
 void Window::AddEventCall(std::function<void(const EventData&)> fct)
 {
-	eventcalls_.push_back(std::move(fct));
+  eventcalls_.push_back(std::move(fct));
 }
 
 auto Init(int w, int h, std::string title) -> GLFWwindow* 
 {
-	glfwInit();
-	glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);	
-	glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 1);	
-	glfwWindowHint(GLFW_OPENGL_PROFILE,GLFW_OPENGL_CORE_PROFILE);
+  glfwInit();
+  glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);	
+  glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 1);	
+  glfwWindowHint(GLFW_OPENGL_PROFILE,GLFW_OPENGL_CORE_PROFILE);
 	
 #ifdef __APPLE__
-	glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
+  glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
 #endif
 
-	auto window = glfwCreateWindow(w, h, title.c_str(), nullptr, nullptr);
+  auto window = glfwCreateWindow(w, h, title.c_str(), nullptr, nullptr);
 
-	if(!window)
-	{ 
-		std::cout << "Failed Creating GLFW window\n";
-		glfwTerminate();
-		return nullptr;
-	}
+  if(!window)
+  { 
+    std::cout << "Failed Creating GLFW window\n";
+    glfwTerminate();
+    return nullptr;
+  }
 
-	glfwMakeContextCurrent(window);	
-	glfwSetFramebufferSizeCallback(window, FBCallback);
-	glfwSetMouseButtonCallback(window, MouseButtonCallback);
+  glfwMakeContextCurrent(window);	
+  glfwSetFramebufferSizeCallback(window, FBCallback);
+  glfwSetMouseButtonCallback(window, MouseButtonCallback);
 	
-	glewExperimental = GL_TRUE;
-	if(auto e = glewInit(); GLEW_OK != e)
-	{	
-		std::cout << glewGetErrorString(e);
-		glfwTerminate();
-		return nullptr;
-	}
+  glewExperimental = GL_TRUE;
+  if(auto e = glewInit(); GLEW_OK != e)
+  {	
+    std::cout << glewGetErrorString(e);
+    glfwTerminate();
+    return nullptr;
+  }
 
-	return window;
+  return window;
 }
 
 }

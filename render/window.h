@@ -30,6 +30,7 @@ public:
   void Resize(int w, int h);
   auto GetCamera() -> CameraPtr { return active_camera_; } 
   void MousePress(double x, double y);
+  void UpdateViewport();
 private:
   std::string title_;
   int width_, height_;

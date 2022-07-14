@@ -1,5 +1,5 @@
 // Compilation on MacOS:
-//  g++ -std=c++20 *.cpp render/*.cpp -o linnik -I/opt/homebrew/include -L/opt/homebrew/lib -lglfw -framework OpenGL -lglew
+//  ~/g++11 -std=c++20 *.cpp render/*.cpp render/imgui/*.cpp -o linnik -I/opt/homebrew/include -L/opt/homebrew/lib -lglfw -framework OpenGL -lglew
 
 #include "render.h"
 #include "render/gui.h"
@@ -35,6 +35,7 @@ int main()
   auto DrawSpheres = std::vector<std::function<void(MVP, Color)>>{};
   for(int r = 0; r<=max_r; ++r)
     DrawSpheres.push_back(DrawPoints(float_ball[r]));
+  /*
   window.AddDrawCall( [Points = DrawSpheres, 
 		       mvp = window.GetCamera()->PV(),
 		       color = NextColor(),
@@ -49,10 +50,53 @@ int main()
     }
     Points[current_sphere](mvp, color); 
   });
+  */
 
-  window.AddDrawCall( []() { GUI::Demo(); });
+
+
+
+  static bool draw_on_click = true;
+  window.AddDrawCall( []()
+    {
+      ImGui::Begin("Hecke Spheres");
+      ImGui::Checkbox("Draw on Click", draw_on_click);
+      std::vector<std::string> radii(r_max+1);
+      const char* imgui_radii[r_max+1];
+      for(int i = 0; r<= r_max; ++i){ 
+	radii[i] = std::to_string(i);
+	imgui_radii[i] = radii[i].c_str();
+      }
+      static int radius_current = 1;
+      ImGui::ListBox("Sphere Radius", &radius_current, imgui_radii, r_max+1, 4);
+      GUI::Demo();
+    });
+
 
 
   window.AddEventCall( [](const EventData& xy){ std::cout << "Click at (" << xy.x << ", " << xy.y << ")\n";});
+  window.AddEventCall( [](const EventData& xy)
+    { if(draw_on_click){
+	C z{xy.x,xy.y};
+	auto ball = HeckeBall<G,C,p,max_r>(z);
+	auto float_ball = HeckeBallFloatConverter<C,p,max_r>(ball);	
+	auto DrawSpheres = std::vector<std::function<void(MVP, Color)>>{};
+	for(int r = 0; r<=max_r; ++r)
+	  DrawSpheres.push_back(DrawPoints(float_ball[r]));
+	window.AddDrawCall( [Points = DrawSpheres, 
+		       mvp = window.GetCamera()->PV(),
+			     color = NextColor(),
+			     last = std::chrono::steady_clock::now(),
+			     current_sphere = 0 ]() mutable { 
+	  auto time = std::chrono::duration<float>( std::chrono::steady_clock::now() - last);	
+	  if(time > 0.5s ){ 
+	    current_sphere++; 
+	    current_sphere %= (max_r+1);
+	    last = std::chrono::steady_clock::now();
+	    color = NextColor();
+	  }
+    Points[current_sphere](mvp, color); 
+  });
+      });
+
   window.Run();
 }
