@@ -24,8 +24,9 @@ public:
   Window(std::string title, float ratio, int width);
   void Run();
   void Exit();
-  void AddDrawCall(std::function<void(void)>);
-  void AddEventCall(std::function<void(const EventData&)>);
+  auto AddDrawCall(std::function<void(void)> fct) -> int;
+  void ChangeDrawCall(int i, std::function<void(void)> fct);
+  void AddEventCall(std::function<bool(const EventData&)>);
   auto Width() const -> const int& { return width_;}	
   void Resize(int w, int h);
   auto GetCamera() -> CameraPtr { return active_camera_; } 
@@ -39,7 +40,7 @@ private:
   Cameras cameras_;
   CameraPtr active_camera_;
   std::vector<std::function<void(void)>> drawcalls_;
-  std::vector<std::function<void(const EventData&)>> eventcalls_;
+  std::vector<std::function<bool(const EventData&)>> eventcalls_;
 };
 
 }

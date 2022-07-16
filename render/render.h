@@ -1,8 +1,9 @@
 #pragma once
 
-#include "render/window.h"
-#include "render/buffer.h"
-#include "render/camera.h"
+#include "imgui/imgui.h"
+#include "window.h"
+#include "buffer.h"
+#include "camera.h"
 #include <functional>
 #include <span>
 

@@ -1,7 +1,7 @@
 #include "render.h"
-#include "tools.h"
-#include "render/shader.h"
-#include "render/buffer.h"
+#include "../tools/tools.h"
+#include "shader.h"
+#include "buffer.h"
 
 #include <GL/glew.h>
 #include <GLFW/glfw3.h>
@@ -40,6 +40,7 @@ auto MakeRGB(Color color) -> Vec3
 
 switch(color){
 	case(Color::Green): return Vec3(glm::value_ptr(Green), 3);
+	case(Color::Salmon): return Vec3(glm::value_ptr(Salmon), 3);
 	case(Color::ForestGreen): return Vec3(glm::value_ptr(ForestGreen), 3);
 	case(Color::LightSeaGreen): return Vec3(glm::value_ptr(LightSeaGreen), 3);
 	case(Color::RoyalBlue): return Vec3(glm::value_ptr(RoyalBlue), 3);
@@ -51,8 +52,8 @@ switch(color){
 	case(Color::CornFlowerBlue): return Vec3(glm::value_ptr(CornFlowerBlue), 3);
 	case(Color::DarkTurqoise): return Vec3(glm::value_ptr(DarkTurqoise), 3);
 	case(Color::MediumSpringGreen): return Vec3(glm::value_ptr(MediumSpringGreen), 3);
-		case(Color::Tomato): return Vec3(glm::value_ptr(Tomato), 3);
-	case(Color::LemonChiffon): return Vec3(glm::value_ptr(Green), 3);
+	case(Color::Tomato): return Vec3(glm::value_ptr(Tomato), 3);
+	case(Color::LemonChiffon): return Vec3(glm::value_ptr(LemonChiffon), 3);
 	default:   return  Vec3(glm::value_ptr(Black),3);
 } 
 }

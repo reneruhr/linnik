@@ -20,9 +20,14 @@ TEST_CASE("Find multiple Orbits", "[BinaryForm]")
 
 }
 
-TEST_CASE("PartitionForms", "[BinaryForm]")
+
+TEST_CASE("Multiple Ds", "[BinaryForm]")
 {
 
+}
+
+TEST_CASE("PartitionForms", "[BinaryForm]")
+{
 	constexpr auto D = SmallestFundamentalPrimeAbove(50000);
 	constexpr auto p = SmallestSplitPrime(D);	
 	

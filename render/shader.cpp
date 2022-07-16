@@ -5,7 +5,7 @@
 #include <GL/glew.h>
 #include <GLFW/glfw3.h>
 
-#include "../tools.h"
+#include "../tools/tools.h"
 
 namespace Render
 {
@@ -15,14 +15,14 @@ Shader::Shader(std::string vert_name, std::string frag_name)
 	vert_shader = glCreateShader(GL_VERTEX_SHADER);	
 	auto  vert_shader_source = Tools::LoadFile(vert_name); 
 	auto  vert_shader_source_ptr = vert_shader_source.c_str();
-	std::cout << "Loaded Shader:\n" << vert_shader_source_ptr;
+	//std::cout << "Loaded Shader:\n" << vert_shader_source_ptr;
 	glShaderSource(vert_shader, 1, &vert_shader_source_ptr , nullptr);
 	glCompileShader(vert_shader);
 
 	frag_shader = glCreateShader(GL_FRAGMENT_SHADER);	
 	auto  frag_shader_source = Tools::LoadFile(frag_name); 
 	auto  frag_shader_source_ptr =frag_shader_source.c_str();
-	std::cout << "Loaded Shader:\n" << frag_shader_source_ptr;
+	//std::cout << "Loaded Shader:\n" << frag_shader_source_ptr;
 	glShaderSource(frag_shader, 1, &frag_shader_source_ptr,  nullptr);
 	glCompileShader(frag_shader);
 

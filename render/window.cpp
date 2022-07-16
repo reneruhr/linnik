@@ -76,7 +76,10 @@ void Window::MousePress(double x, double y)
   x = 2. * x / w - 1;
   y = h-y;
   y = (2. * y) / w;
-  for(auto& event: eventcalls_) event({x,y});		
+  for(auto& event: eventcalls_)
+  {
+    event({x,y});
+  }
 }
 
 void Window::Resize(int w, int h) 
@@ -86,12 +89,18 @@ void Window::Resize(int w, int h)
   active_camera_->Projection({-1.f,1.f, 0.f, 2.f*h/w,-1.f,1.f});
 }
 
-void Window::AddDrawCall(std::function<void(void)> fct)
+auto Window::AddDrawCall(std::function<void(void)> fct) -> int
 {
   drawcalls_.push_back(std::move(fct));
+  return drawcalls_.size()-1;
 }
 
-void Window::AddEventCall(std::function<void(const EventData&)> fct)
+void Window::ChangeDrawCall(int i, std::function<void(void)> fct)
+{
+  drawcalls_[i] = fct;
+}
+
+void Window::AddEventCall(std::function<bool(const EventData&)> fct)
 {
   eventcalls_.push_back(std::move(fct));
 }
