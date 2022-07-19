@@ -87,9 +87,11 @@ constexpr auto ReductionTranslation(C z) -> C
 {
 	auto x = real(z);
 	if (x > 0.5)
-		z-= C(IntCeil(x),0); 
-	else if (x <= -0.5)
-		z-= C(IntFloor(x),0);
+		z-= C(IntNearest(x),0); 
+	else if (x < -0.5)
+		z-= C(IntNearest(x),0);
+	else if (x == -0.5)
+		z+= C(1,0);
 	return z;
 }
 
@@ -97,12 +99,28 @@ template<class C>
 constexpr auto Reduction(C z) -> C
 {
 	while(true){
-		z = ReductionTranslation(z);
-		if(norm(z) < 1. || (norm(z)==1. && real(z) < 0.) )
+	        z = ReductionTranslation(z);
+		if( (norm(z) < 1.) or ((norm(z)==1.) and (real(z) < 0.)) )
 			z = ReductionTranslation(-1. / z);
 		else break;
 	}
 	return z;	
+}
+
+template <class C>
+constexpr auto ApproximativeEqual(C z, C w) -> bool
+{
+  auto re = abs(real(z)-real(w));
+  auto im = abs(imag(z)-imag(w));
+  auto eps = 0.000001; 
+  if(im <= eps){
+    if (re <=eps) return true;
+    else if(abs(re-1.) <= eps and abs(abs(real(z))-0.5) <= eps) return true;
+    else if(  (abs(abs(z)-1) < eps)
+	      &&(abs(abs(w)-1) < eps)  )
+      return ( abs(real(z)+real(w)) < 2*eps); 
+  }
+  return false;
 }
 
 template<class Gamma, int alphabet_length>

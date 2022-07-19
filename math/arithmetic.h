@@ -40,6 +40,18 @@ constexpr int IntCeil(T a)
 	return i>=a ? i : i+1;
 }
 
+template<class T>
+constexpr int IntNearest(T a)
+{
+  return IntFloor(a+0.5);
+}
+
+template<class T>
+constexpr int IntNearestTo0(T a)
+{
+  return static_cast<int>(a);
+}
+
 constexpr int IntPow(int b, int e, int res = 1)
 {
 	return e==0 ? res : IntPow(b, e-1, b*res); 

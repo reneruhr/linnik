@@ -80,19 +80,20 @@ auto DrawTriangle() -> std::function<void(int, float)>
 }
 
 
-auto DrawPoints(const Buffer& buffer) -> std::function<void(MVP, Color)>
+auto DrawPoints(const Buffer& buffer) -> std::function<void(MVP, Color, float)>
 {
 	auto shader = Shader("shaders/points.vert", "shaders/points.frag");
 	auto DrawCall = PointsBuffer(buffer);
 	
 	glEnable(GL_PROGRAM_POINT_SIZE);
 
-	return [p = shader.Id(), Draw = DrawCall](MVP mvp, Color color)
+	return [p = shader.Id(), Draw = DrawCall](MVP mvp, Color color, float point_size)
 	{
 		glUseProgram(p);	
 		glUniformMatrix4fv(glGetUniformLocation(p, "mvp"), 1, GL_FALSE, mvp.data());
 		glUniform3fv( glGetUniformLocation(p, "color"), 1, MakeRGB(color).data());
 		glUniformMatrix4fv(glGetUniformLocation(p, "mvp"), 1, GL_FALSE, mvp.data());
+		glUniform1f( glGetUniformLocation(p, "point_size"), point_size);
 		Draw();
 	};
 }

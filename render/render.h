@@ -22,6 +22,6 @@ auto MakeRGB(Color) -> Vec3;
 auto NextColor() -> Color;
 
 auto DrawTriangle() -> std::function<void(int, float)> ;
-auto DrawPoints(const Buffer&) -> std::function<void(MVP , Color)> ;
+auto DrawPoints(const Buffer&) -> std::function<void(MVP , Color, float)> ;
 
 }

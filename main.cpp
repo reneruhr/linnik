@@ -33,16 +33,33 @@ int main()
   C i{0.,1.};
   auto ball = HeckeBall<G,C,p,max_r>(i);
   auto float_ball = HeckeBallFloatConverter<C,p,max_r>(ball);	
-  auto DrawSpheres = std::vector<std::function<void(MVP, Color)>>{};
+  auto DrawSpheres = std::vector<std::function<void(MVP, Color, float)>>{};
   for(int r = 0; r<=max_r; ++r)
     DrawSpheres.push_back(DrawPoints(float_ball[r]));
 
+
+  constexpr auto n_cm = 30;
+  constexpr auto D = 10000;
+  auto [discs, cm_points] = CMPointsCollection<n_cm,D>();
+  auto DrawCM= std::vector<std::function<void(MVP, Color, float)>>{};
+  for(int r = 0; r<size(cm_points); ++r)
+    DrawCM.push_back(DrawPoints(cm_points[r]));
+
+  std::vector<std::string> cm_names_prep(n_cm);
+  static const char* cm_names[n_cm];
+      for(int i = 0; i < n_cm; ++i){ 
+	cm_names_prep[i] = "D= " + std::to_string(discs[i].first);
+	cm_names_prep[i] +=  "h= " + std::to_string(discs[i].second);
+	cm_names[i] = cm_names_prep[i].c_str();
+      }
+  static int cm_active = 0;
 
   static bool draw_on_click = true;
   static bool cycle_through= false;
   static int current_radius = 1;
   static int current_draw = -1;
   static bool active_gui= false;
+  static float point_size = 8.f;
   window.AddDrawCall( []()
     {
       ImGui::Begin("Point Controls");
@@ -52,18 +69,11 @@ int main()
       ImGui::SliderInt("Radius", &current_radius, 0, max_r);
       ImGui::Checkbox("Cycle through radii", &cycle_through);
 
+      ImGui::SliderFloat("Point Size", &point_size, 0.f, 20.f);
 
       ImGui::Text("CM Points");
-/*
-      std::vector<std::string> radii(r_max+1);
-      const char* imgui_radii[r_max+1];
-      for(int i = 0; r<= r_max; ++i){ 
-	radii[i] = std::to_string(i);
-	imgui_radii[i] = radii[i].c_str();
-      }
-      static int radius_current = 1;
-      ImGui::ListBox("Sphere Radius", &radius_current, imgui_radii, r_max+1, 4);
-*/
+      ImGui::ListBox("D", &cm_active, cm_names, n_cm, 4);
+
       ImGui::End();
       //GUI::Demo();
     });
@@ -75,7 +85,7 @@ int main()
 	C z{xy.x,xy.y};
 	auto ball = HeckeBall<G,C,p,max_r>(z);
 	auto float_ball = HeckeBallFloatConverter<C,p,max_r>(ball);	
-	auto DrawSpheres = std::vector<std::function<void(MVP, Color)>>{};
+	auto DrawSpheres = std::vector<std::function<void(MVP, Color, float)>>{};
 	for(int r = 0; r<=max_r; ++r)
 	  DrawSpheres.push_back(DrawPoints(float_ball[r]));
 	auto call = [Points = DrawSpheres, 
@@ -84,7 +94,7 @@ int main()
 		     last = std::chrono::steady_clock::now(),
 		     current_sphere = 0 
 	  ]() mutable { 
-	  if(not cycle_through) Points[current_radius](mvp, color);
+	  if(not cycle_through) Points[current_radius](mvp, color, point_size);
 	  else {
 	    auto time = std::chrono::duration<float>( std::chrono::steady_clock::now() - last);	
 	    if(time > 0.5s ){ 
@@ -93,7 +103,7 @@ int main()
 	      last = std::chrono::steady_clock::now();
 	      color = NextColor();
 	    }
-	    Points[current_sphere](mvp, color); 
+	    Points[current_sphere](mvp, color, point_size); 
 	  }
 	};
       if(current_draw != -1) window.ChangeDrawCall(current_draw, std::move(call));

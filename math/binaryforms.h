@@ -1,7 +1,9 @@
 #pragma once
-#include "primes1-78500.h"
+#include "primes1-100000.h"
 #include <array>
 #include "arithmetic.h"
+#include "../tools/tools.h"
+
 namespace Math{
 
 template<class Int, int D>
@@ -11,7 +13,7 @@ struct QuadraticForm
 	
 	constexpr QuadraticForm() : a_(1), b_(0), c_(Abs(D)) {}
 	constexpr QuadraticForm(Int a, Int b, Int c) : a_(a), b_(b), c_(c) {}
-
+	constexpr int Disc() const { return D; }
 	constexpr friend auto operator==(const QuadraticForm<Int,D>& A, const QuadraticForm<Int,D>& B)
 	{
 		return (A.a_ == B.a_) and (A.b_ == B.b_) and (A.c_ == B.c_ ); 
@@ -23,6 +25,14 @@ struct QuadraticForm
 		return os;
 	}
 };
+
+template<class Q, class C>
+constexpr auto ToPoint(const Q& q) -> C
+{
+  auto z = C{static_cast<C::value_type>(-q.b_), static_cast<C::value_type>(SquareRoot(Abs(q.Disc())))};
+  z /= static_cast<C::value_type>(2*q.a_);
+  return z;
+}
 
 constexpr bool IsPrime(int p)
 {
@@ -67,12 +77,11 @@ constexpr bool IsReduced(QuadraticForm<Int,D> q){
 }
 
 // Cohen 5.3.5
-// todo: change to constexpr vector when available
-// for now use tuple first first member being the size, aka class number h(D)
-template<class Int, int D>
+// first member is size, aka class number h(D)
+template<class Int, int D, bool IsFundamental = true>
 constexpr auto MakeReducedForms() -> std::tuple<int, std::array<QuadraticForm<Int,D>,Abs(D)>>
 {
-	static_assert(IsPrimeAndFundamental(D));
+  //static_assert(IsPrimeAndFundamental(D));
 	std::array<QuadraticForm<Int,D>, Abs(D)> forms{};
 	int h{0};
 	Int b{1};
@@ -83,7 +92,7 @@ constexpr auto MakeReducedForms() -> std::tuple<int, std::array<QuadraticForm<In
 		a = b;
 		while(true){
 			if( a > 0) {
-				if(ac%a == 0){
+			  if( (ac%a == 0) and (IsFundamental or (Gcd(a, b, ac/a) == 1))){
 					c = ac/a;	
 					forms[h] = QuadraticForm<Int,D>(a,b,c);
 					h++;
@@ -262,4 +271,47 @@ constexpr auto PartitionForms(FormsContainer& sized_forms)
 }
 
 
+template<int n>
+constexpr
+std::array<int, n>
+DiscriminantCollection(int D)
+{
+  std::array<int,n> discs_{};
+  for(int i{0}; i<n; ++i){
+    D = SmallestFundamentalPrimeAbove(std::abs(D)); 
+    discs_[i] = D--;
+  }
+  return discs_;
+}
+
+template <int D>
+constexpr auto CMPoints()
+{
+  constexpr auto data = MakeReducedForms<long, D>();	
+  constexpr auto h  = std::get<0>(data);
+  std::array<std::complex<float>, h> pts;
+  constexpr auto q_pts = std::get<1>(data);
+  for(auto i{0}; i<h; ++i) 
+	pts[i] = ToPoint<decltype(q_pts[i]),std::complex<float>>(q_pts[i]);
+  return pts;
+}
+
+template <int n, int D>
+constexpr auto CMPointsCollection()
+{
+  using F = std::complex<float>;
+  auto discs= std::vector<std::pair<int,int>>(n);
+  auto pts  = std::vector<std::vector<F>>(n);
+  constexpr auto Ds = DiscriminantCollection<n>(D);
+  Tools::for_range<0,n>([&Ds, &pts, &discs]<auto i>() {
+      auto arr = CMPoints<Ds[i]>();
+      auto h = size(arr);
+      discs[i].first = Ds[i];
+      discs[i].second = h;
+      pts[i] = std::vector<F>(h);
+      for(auto j{0}; j< h; j++)
+	pts[i][j] = arr[j];
+    });
+  return std::pair{discs,pts};
+}
 }
