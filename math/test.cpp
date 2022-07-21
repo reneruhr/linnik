@@ -16,9 +16,17 @@ using namespace Math;
 
 TEST_CASE("Find multiple Orbits", "[BinaryForm]")
 {
-
-
-
+  std::cout << "Multiple Orbits\n";
+  constexpr int n{50};
+  constexpr int D{100000};
+  auto [discs, pts ,ps , necklaces] = NecklaceCollection<n,D>();
+  for(int i{0}; i<n; ++i){
+    auto D = discs[i].first;
+    auto h = discs[i].second;
+    auto girth = size(necklaces[i]);
+    if(h!=girth)
+    std::cout << "D = " << D << ". p = " << ps[i] << ". h = " << h << ". girth = " << girth << ".\n";
+    }
 }
 
 
@@ -648,4 +656,32 @@ TEST_CASE("Multiple CM Points", "[BinaryForm]")
     });
 
   CMPointsCollection<10,100>();
+}
+
+TEST_CASE("Multiple Necklaces", "[BinaryForm]")
+{
+  std::cout << "Multiple Necklaces\n";
+  {
+  constexpr int n{5};
+  auto [discs, pts ,ps , necklaces] = NecklaceCollection<n,1000>();
+  for(int i{0}; i<n; ++i){
+    std::cout << "D = " << discs[i].first << ". p = " << ps[i] << ". h = " << discs[i].second << ". girth = " << size(necklaces[i]) << ".\n";
+    }
+  }
+  {
+  constexpr int n{5};
+  auto [discs, pts ,ps , necklaces] = NecklaceCollection<n,100000>();
+  for(int i{0}; i<n; ++i){
+    std::cout << "D = " << discs[i].first << ". p = " << ps[i] << ". h = " << discs[i].second << ". girth = " << size(necklaces[i]) << ".\n";
+    }
+  }
+/*
+  {
+  constexpr int n{5};
+  auto [discs, pts ,ps , necklaces] = NecklaceCollection<n,200000>();
+  for(int i{0}; i<n; ++i){
+    std::cout << "D = " << discs[i].first << ". p = " << ps[i] << ". h = " << discs[i].second << ". girth = " << size(necklaces[i]) << ".\n";
+    }
+  }
+*/
 }

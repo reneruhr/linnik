@@ -225,7 +225,6 @@ std::pair<int, std::array<QuadraticForm<Int, D>, Abs(D)>>
 	} 
 }
 
-
 template<class Int, int D, int p, int orbit_bound, class Map>
 constexpr auto Orbit(QuadraticForm<Int, D> f, Map map) -> 
 std::pair<int, std::array<QuadraticForm<Int, D>, orbit_bound>>
@@ -314,4 +313,36 @@ constexpr auto CMPointsCollection()
     });
   return std::pair{discs,pts};
 }
+
+template <int n, int D>
+constexpr auto NecklaceCollection()
+{
+  using F = std::complex<float>;
+  auto discs = std::vector<std::pair<int,int>>(n);
+  auto pts  = std::vector<std::vector<F>>(n);
+  auto ps = std::vector<int>(n);
+  auto necklaces = std::vector<std::vector<F>>(n);
+  constexpr auto Ds = DiscriminantCollection<n>(D);
+  Tools::for_range<0,n>([&Ds, &pts, &discs, &ps, &necklaces]<auto i>() {
+      auto data = MakeReducedForms<int, Ds[i]>();	
+      auto h    = std::get<0>(data);
+      auto q_pts = std::get<1>(data);
+      auto arr = CMPoints<Ds[i]>();
+      discs[i].first = Ds[i];
+      discs[i].second = h;
+      constexpr auto p =  SmallestSplitPrime(Ds[i]);	
+      ps[i] = p;
+      pts[i] = std::vector<F>(h);
+      for(auto j{0}; j< h; j++)
+	pts[i][j] = ToPoint<decltype(q_pts[j]),std::complex<float>>(q_pts[j]);
+      auto sized_necklace = Necklace<int, Ds[i], p>(q_pts[0]);	
+      auto girth = std::get<0>(sized_necklace);
+      auto neck_pts = std::get<1>(sized_necklace);
+      necklaces[i] = std::vector<F>(girth);
+      for(auto j{0}; j < girth; j++)
+	necklaces[i][j] = ToPoint<decltype(q_pts[j]),std::complex<float>>(neck_pts[j]);
+    });
+  return std::tuple{discs, pts, ps, necklaces};
+}
+
 }

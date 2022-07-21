@@ -9,10 +9,10 @@ struct GLFWwindow;
 
 namespace Render
 {
-
 struct Camera;
 using CameraPtr = std::shared_ptr<Camera>;
 using Cameras = std::vector<CameraPtr>;
+
 struct EventData
 {
   double x,y;

@@ -4,12 +4,10 @@
 #include "gui.h"
 #include <GL/glew.h>
 #include <GLFW/glfw3.h>
-
 #include <iostream>
 
 namespace Render
 {
-
 auto Init(int,int,std::string) -> GLFWwindow*;
 
 void Window::UpdateViewport()
