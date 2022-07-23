@@ -65,6 +65,9 @@ auto NextColor() -> Color {
 	 return static_cast<Color>(i++);
 }
 
+auto IntToColor(int i) -> Color { 
+	 return static_cast<Color>(i);
+}
 auto DrawTriangle() -> std::function<void(int, float)> 
 {
 	auto shader = Shader("shaders/circle.vert", "shaders/triangle.frag");

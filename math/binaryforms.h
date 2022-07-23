@@ -123,7 +123,7 @@ constexpr auto Reduce(QuadraticForm<Int, D> Q) -> QuadraticForm<Int, D>
 
 	bool init = true;
 	while(true){
-		if(not init or  -a < b and b <= a){
+	  if((not init) or  (-a < b and b <= a)){
 			if(a > c){
 				b = -b;
 				using std::swap;
@@ -149,7 +149,7 @@ template<class Int, int D>
 constexpr auto Composition(QuadraticForm<Int, D> P, QuadraticForm<Int, D> Q) -> QuadraticForm<Int,D>
 {
 	Int a,b,c;
-	Int y1,y2,x1,x2,u,v,v1,v2,d,d1,r,s,n;
+	Int y1,y2,x2,u,v,v1,v2,d,d1,r,s,n;
 	using std::swap;
 	if(P.a_ > Q.a_) swap(P,Q);
 	s = (P.b_+Q.b_)/2;
@@ -304,7 +304,7 @@ constexpr auto CMPointsCollection()
   constexpr auto Ds = DiscriminantCollection<n>(D);
   Tools::for_range<0,n>([&Ds, &pts, &discs]<auto i>() {
       auto arr = CMPoints<Ds[i]>();
-      auto h = size(arr);
+      int h = size(arr);
       discs[i].first = Ds[i];
       discs[i].second = h;
       pts[i] = std::vector<F>(h);
@@ -314,33 +314,45 @@ constexpr auto CMPointsCollection()
   return std::pair{discs,pts};
 }
 
-template <int n, int D>
+template <int n, int D_Start>
 constexpr auto NecklaceCollection()
 {
   using F = std::complex<float>;
+  using Container = std::vector<std::complex<float>>;
   auto discs = std::vector<std::pair<int,int>>(n);
-  auto pts  = std::vector<std::vector<F>>(n);
+  auto pts  = std::vector<Container>(n);
   auto ps = std::vector<int>(n);
-  auto necklaces = std::vector<std::vector<F>>(n);
-  constexpr auto Ds = DiscriminantCollection<n>(D);
+  auto necklaces = std::vector<std::vector<Container>>(n);
+  constexpr auto Ds = DiscriminantCollection<n>(D_Start);
   Tools::for_range<0,n>([&Ds, &pts, &discs, &ps, &necklaces]<auto i>() {
-      auto data = MakeReducedForms<int, Ds[i]>();	
-      auto h    = std::get<0>(data);
+      constexpr auto D = Ds[i];
+      constexpr auto data = MakeReducedForms<int, D>();	
+      constexpr auto h    = std::get<0>(data);
       auto q_pts = std::get<1>(data);
-      auto arr = CMPoints<Ds[i]>();
-      discs[i].first = Ds[i];
+      discs[i].first = D;
       discs[i].second = h;
-      constexpr auto p =  SmallestSplitPrime(Ds[i]);	
+      constexpr auto p =  SmallestSplitPrime(D);	
       ps[i] = p;
       pts[i] = std::vector<F>(h);
       for(auto j{0}; j< h; j++)
 	pts[i][j] = ToPoint<decltype(q_pts[j]),std::complex<float>>(q_pts[j]);
-      auto sized_necklace = Necklace<int, Ds[i], p>(q_pts[0]);	
-      auto girth = std::get<0>(sized_necklace);
-      auto neck_pts = std::get<1>(sized_necklace);
-      necklaces[i] = std::vector<F>(girth);
-      for(auto j{0}; j < girth; j++)
-	necklaces[i][j] = ToPoint<decltype(q_pts[j]),std::complex<float>>(neck_pts[j]);
+
+      auto size_total_necklace_pts{0};
+      auto q_pt = std::begin(q_pts);
+      auto e = q_pt+h;
+      while(size_total_necklace_pts < h){
+	auto sized_necklace = Necklace<int, D, p>(*q_pt);	
+	auto girth = std::get<0>(sized_necklace);
+	size_total_necklace_pts+=girth;
+	auto neck_pts = std::get<1>(sized_necklace);
+	necklaces[i].push_back(Container(girth));
+	for(auto j{0}; j < girth; j++)
+	  necklaces[i].back()[j] = ToPoint<decltype(*q_pt),std::complex<float>>(neck_pts[j]);
+	q_pt = std::partition(q_pt,e, 
+			    [&neck_pts](const auto& form) { 
+			      return std::find(begin(neck_pts), end(neck_pts), form) != end(neck_pts);
+			    }); 
+    }
     });
   return std::tuple{discs, pts, ps, necklaces};
 }

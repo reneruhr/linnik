@@ -10,7 +10,6 @@
 #include <iostream>
 constexpr int p{3};	
 constexpr int max_r{9};
-constexpr std::array<int,6> ps = {3, 3, 5, 11, 3, 3};
 constexpr std::array<int,6> Ds = {-100271, -100391, -100411, -100447, -100511, -100547};
 int main() 
 {
@@ -35,7 +34,7 @@ int main()
   constexpr auto D = 10000;
   auto [discs, cm_points] = CMPointsCollection<n_cm,D>();
   auto DrawCM = std::vector<std::function<void(MVP, Color, float)>>{};
-  for(int r = 0; r<size(cm_points); ++r)
+  for(std::size_t r = 0; r<size(cm_points); ++r)
     DrawCM.push_back(DrawPoints(cm_points[r]));
 
   constexpr auto n_cm_total = 3*n_cm;  
@@ -49,7 +48,7 @@ int main()
 
   constexpr auto D2 = 100000;
   auto [discs2, cm_points2] = CMPointsCollection<n_cm,D2>();
-  for(int r = 0; r<size(cm_points2); ++r)
+  for(std::size_t r = 0; r<size(cm_points2); ++r)
     DrawCM.push_back(DrawPoints(cm_points2[r]));
   for(int i{0}; i < n_cm; ++i){ 
         cm_names_prep[n_cm+i] = "D = " + std::to_string(discs2[i].first);
@@ -59,7 +58,7 @@ int main()
 
   constexpr auto D3 = 200000;
   auto [discs3, cm_points3] = CMPointsCollection<n_cm,D3>();
-  for(int r = 0; r<size(cm_points3); ++r)
+  for(std::size_t r = 0; r<size(cm_points3); ++r)
     DrawCM.push_back(DrawPoints(cm_points3[r]));
   for(int i{0}; i < n_cm; ++i){ 
 	cm_names_prep[i+2*n_cm] = "D = " + std::to_string(discs3[i].first);
@@ -68,28 +67,45 @@ int main()
       }
 
 
+  
+  constexpr int neck_size = size(Ds);
+  auto necklace_data = std::vector<std::array<int,3>>(neck_size);
+  using FctContainer = std::vector<std::function<void(MVP, Color, float)>>;
+  auto DrawCM_NonCyclic = std::vector<FctContainer>{};
+  Tools::for_range<0,neck_size>([&necklace_data, &DrawCM_NonCyclic]<auto i>() {
+      constexpr auto D = Ds[i];
+      auto [discs, pts , ps, necklaces] = NecklaceCollection<1,D>();
+      necklace_data[i] = {discs[0].second, int(size(necklaces[0])), ps[0]};
+      DrawCM_NonCyclic.push_back(FctContainer(size(necklaces[0])));
 
-  auto [discs, cm_points] = CMPointsCollection<n_cm,D>();
-  auto DrawCM_NonCyclic = std::vector<std::function<void(MVP, Color, float)>>{};
-  for(int r = 0; r<size(cm_points); ++r)
-
-  Tools::for_range<0,n>([&Ds, &pts, &discs, &ps, &necklaces]<auto i>() {
-      auto [discs, pts ,ps , necklaces] = NecklaceCollection<1,Ds[i]>();
-      
-      DrawCM_NonCyclic.push_back(DrawPoints(necklaces[0]));
+      int j{0};
+      for(auto& neck : necklaces[0])
+	DrawCM_NonCyclic.back()[j++] = DrawPoints(neck);
     });
 
-  static bool draw_on_click = true;
-  static bool cycle_through= false;
-  static int current_radius = 1;
-  static int current_draw = -1;
+  std::vector<std::string> necklaces_names_prep(neck_size);
+  static const char* necklaces_names[neck_size];
+  for(int i{0} ; i < neck_size ; ++i){ 
+    necklaces_names_prep[i] = "D = " + std::to_string(Ds[i]);
+    necklaces_names_prep[i] += ". p = " + std::to_string(necklace_data[i][2]);
+    necklaces_names_prep[i] +=  ". h = " + std::to_string(necklace_data[i][0]);
+    necklaces_names_prep[i] +=  ". # = " + std::to_string(necklace_data[i][1]);
+    necklaces_names[i] = necklaces_names_prep[i].c_str();
+  }
+
+
+  
   static bool active_gui= false;
   static float point_size = 8.f;
-
+  static bool draw_on_click = true;
+  static int current_draw = -1;
   static bool draw_hecke_sphere = true;
+  static int current_radius = 1;
+  static bool cycle_through= false;
   static bool draw_cm_points = false;
-  static bool draw_necklace = false;
   static int cm_active = 0;
+  static bool draw_necklaces = false;
+  static int active_necklaces = 0;
 
   window.AddDrawCall( []()
     {
@@ -110,14 +126,18 @@ int main()
       ImGui::ListBox("##D", &cm_active, cm_names, n_cm_total, 10);
 
       ImGui::Separator();
-      ImGui::Text("CM Necklace");
+      ImGui::Text("Necklaces");
+      ImGui::Checkbox("Draw ", &draw_necklaces);
+      ImGui::ListBox("##Necklaces", &active_necklaces, necklaces_names, neck_size, 10);
+
       ImGui::End();
       //GUI::Demo();
     });
 
 
+  
   window.AddEventCall( [](const EventData& xy){ std::cout << "Click at (" << xy.x << ", " << xy.y << ")\n"; return false;});
-  window.AddEventCall( [&window, &DrawCM](const EventData& xy)
+  window.AddEventCall( [&window, &DrawCM, &DrawCM_NonCyclic, &necklace_data](const EventData& xy)
     { if(draw_on_click && not active_gui){
 	C z{xy.x,xy.y};
 	auto ball = HeckeBall<G,C,p,max_r>(z);
@@ -126,15 +146,20 @@ int main()
 	for(int r = 0; r<=max_r; ++r)
 	  DrawSpheres.push_back(DrawPoints(float_ball[r]));
 	auto call = [Points = DrawSpheres,
-		         &DrawCM,
+		     &DrawCM, &DrawCM_NonCyclic,
 			mvp = window.GetCamera()->PV(),
       		      color = NextColor(),
       		      color2 = NextColor(),
 		       last = std::chrono::steady_clock::now(),
-	     current_sphere = 0
+		     current_sphere = 0,
+		     &necklace_data
 	  ]() mutable { 
 	  if(not cycle_through and draw_hecke_sphere) Points[current_radius](mvp, color, point_size);
 	  if(draw_cm_points) DrawCM[cm_active](mvp, color2, point_size);
+	  if(draw_necklaces) {
+	    for(int i{0}; i<necklace_data[active_necklaces][2]; ++i)
+	      DrawCM_NonCyclic[active_necklaces][i](mvp, IntToColor(i), point_size);
+	  }
 	  if(cycle_through && draw_hecke_sphere){
 	    auto time = std::chrono::duration<float>( std::chrono::steady_clock::now() - last);	
 	    if(time > 0.5s ){ 

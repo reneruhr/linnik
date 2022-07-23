@@ -25,7 +25,7 @@ TEST_CASE("Find multiple Orbits", "[BinaryForm]")
     auto h = discs[i].second;
     auto girth = size(necklaces[i]);
     if(h!=girth)
-    std::cout << "D = " << D << ". p = " << ps[i] << ". h = " << h << ". girth = " << girth << ".\n";
+      std::cout << "D = " << D << ". p = " << ps[i] << ". h = " << h << ". girth = " << girth << ".\n";
     }
 }
 
@@ -675,13 +675,17 @@ TEST_CASE("Multiple Necklaces", "[BinaryForm]")
     std::cout << "D = " << discs[i].first << ". p = " << ps[i] << ". h = " << discs[i].second << ". girth = " << size(necklaces[i]) << ".\n";
     }
   }
-/*
   {
-  constexpr int n{5};
-  auto [discs, pts ,ps , necklaces] = NecklaceCollection<n,200000>();
-  for(int i{0}; i<n; ++i){
-    std::cout << "D = " << discs[i].first << ". p = " << ps[i] << ". h = " << discs[i].second << ". girth = " << size(necklaces[i]) << ".\n";
+  constexpr auto D =-100391;
+  auto [discs, pts ,ps , necklaces] = NecklaceCollection<1,D>();
+  auto h = discs[0].second;
+  auto girth = 0;
+  std::cout << "D = " << D << ". h = " << h << '\n';
+  for(auto& sub : necklaces[0]){
+    girth += size(sub);
+    std::cout << size(sub) << " + ";
     }
+  std::cout << "  = " << girth << '\n';
+  REQUIRE( h == girth );
   }
-*/
 }
