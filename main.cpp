@@ -157,7 +157,7 @@ int main()
 	  if(not cycle_through and draw_hecke_sphere) Points[current_radius](mvp, color, point_size);
 	  if(draw_cm_points) DrawCM[cm_active](mvp, color2, point_size);
 	  if(draw_necklaces) {
-	    for(int i{0}; i<necklace_data[active_necklaces][2]; ++i)
+	    for(int i{0}; i<necklace_data[active_necklaces][1]; ++i)
 	      DrawCM_NonCyclic[active_necklaces][i](mvp, IntToColor(i), point_size);
 	  }
 	  if(cycle_through && draw_hecke_sphere){
